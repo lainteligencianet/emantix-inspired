@@ -3,16 +3,18 @@ import { GameHeader } from "../components/game/GameHeader";
 import { GuessInput } from "../components/game/GuessInput";
 import { GuessHistory } from "../components/game/GuessHistory";
 import { GameRules } from "../components/game/GameRules";
+import { AnimatedGuess } from "../components/game/AnimatedGuess";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useState } from "react";
 
 const Game = () => {
   const { gameState, isLoading, makeGuess, resetGame } = useGame();
+  const [animatingGuess, setAnimatingGuess] = useState<any>(null);
 
   const handleGuess = (word: string) => {
-    makeGuess(word);
-    
+    // Check for duplicate first
     if (gameState.guesses.some(g => g.word.toLowerCase() === word.toLowerCase())) {
       toast({
         title: "Palabra repetida",
@@ -21,25 +23,45 @@ const Game = () => {
       });
       return;
     }
+
+    makeGuess(word);
     
-    // Show encouragement based on score
-    const lastGuess = gameState.guesses[0];
-    if (lastGuess?.score === 100) {
-      toast({
-        title: "¡FELICIDADES! 🎉",
-        description: "¡Has encontrado la palabra secreta!",
-      });
-    } else if (lastGuess?.score >= 80) {
-      toast({
-        title: "¡Muy cerca! 🔥",
-        description: "Estás a punto de encontrarla.",
-      });
-    } else if (lastGuess?.score >= 60) {
-      toast({
-        title: "Bien 👍",
-        description: "Vas por buen camino.",
-      });
-    }
+    // Get the latest guess after making it (we'll need to wait a bit for state update)
+    setTimeout(() => {
+      const lastGuess = gameState.guesses[0];
+      if (lastGuess) {
+        // Show animated guess
+        setAnimatingGuess(lastGuess);
+        
+        // Show encouragement based on score
+        if (lastGuess.score === 1000) {
+          setTimeout(() => {
+            toast({
+              title: "¡FELICIDADES! 🎉",
+              description: "¡Has encontrado la palabra secreta!",
+            });
+          }, 2800);
+        } else if (lastGuess.score >= 800) {
+          setTimeout(() => {
+            toast({
+              title: "¡Muy cerca! 🔥",
+              description: "Estás a punto de encontrarla.",
+            });
+          }, 2800);
+        } else if (lastGuess.score >= 600) {
+          setTimeout(() => {
+            toast({
+              title: "Bien 👍",
+              description: "Vas por buen camino.",
+            });
+          }, 2800);
+        }
+      }
+    }, 100);
+  };
+
+  const handleAnimationComplete = () => {
+    setAnimatingGuess(null);
   };
 
   if (isLoading) {
@@ -55,6 +77,13 @@ const Game = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {animatingGuess && (
+        <AnimatedGuess 
+          guess={animatingGuess} 
+          onAnimationComplete={handleAnimationComplete} 
+        />
+      )}
+      
       <div className="container max-w-4xl mx-auto px-4 py-8">
         <GameHeader 
           guessCount={gameState.guesses.length}

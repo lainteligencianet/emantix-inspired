@@ -28,9 +28,14 @@ export class GameService {
 
   async loadWords(): Promise<void> {
     try {
-      const response = await fetch('/data/mots.txt');
+      const response = await fetch('/data/palabras.txt');
       const text = await response.text();
-      this.words = text.split('\n').filter(word => word.trim().length > 0);
+      // Parse the numbered format: "1: palabra"
+      this.words = text.split('\n')
+        .filter(line => line.trim().length > 0)
+        .map(line => line.split(': ')[1])
+        .filter(word => word && word.trim().length > 0)
+        .map(word => word.trim());
       
       // Initialize embeddings model
       await this.initializeEmbeddings();
@@ -106,7 +111,7 @@ export class GameService {
     
     // Perfect match
     if (guessLower === targetLower) {
-      return 100;
+      return 1000;
     }
 
     // Try semantic similarity if embeddings are available
@@ -126,9 +131,9 @@ export class GameService {
         // Calculate cosine similarity
         const similarity = this.cosineSimilarity(guessEmbedding, targetEmbedding);
         
-        // Convert similarity (-1 to 1) to score (0 to 99)
-        const score = Math.round(((similarity + 1) / 2) * 99);
-        return Math.max(0, Math.min(99, score));
+        // Convert similarity (-1 to 1) to score (0 to 999)
+        const score = Math.round(((similarity + 1) / 2) * 999);
+        return Math.max(0, Math.min(999, score));
         
       } catch (error) {
         console.error('Error calculating semantic similarity:', error);
@@ -156,58 +161,72 @@ export class GameService {
   private calculateSimpleScore(guess: string, target: string): number {
     let score = 0;
     
-    // Length similarity (up to 20 points)
+    // Length similarity (up to 200 points)
     const lengthDiff = Math.abs(guess.length - target.length);
-    score += Math.max(0, 20 - lengthDiff * 2);
+    score += Math.max(0, 200 - lengthDiff * 20);
     
-    // Common letters (up to 30 points)
+    // Common letters (up to 300 points)
     const guessChars = guess.toLowerCase().split('');
     const targetChars = target.toLowerCase().split('');
     const commonChars = guessChars.filter(char => targetChars.includes(char));
-    score += Math.min(30, commonChars.length * 3);
+    score += Math.min(300, commonChars.length * 30);
     
-    // Position-based scoring (up to 25 points)
+    // Position-based scoring (up to 250 points)
     let positionScore = 0;
     for (let i = 0; i < Math.min(guess.length, target.length); i++) {
       if (guess[i].toLowerCase() === target[i].toLowerCase()) {
-        positionScore += 5;
+        positionScore += 50;
       }
     }
-    score += Math.min(25, positionScore);
+    score += Math.min(250, positionScore);
     
-    // First letter bonus (up to 10 points)
+    // First letter bonus (up to 100 points)
     if (guess[0]?.toLowerCase() === target[0]?.toLowerCase()) {
-      score += 10;
+      score += 100;
     }
     
-    // Last letter bonus (up to 5 points)
+    // Last letter bonus (up to 50 points)
     if (guess[guess.length - 1]?.toLowerCase() === target[target.length - 1]?.toLowerCase()) {
-      score += 5;
+      score += 50;
     }
     
-    // Contains target substring (up to 15 points)
+    // Contains target substring (up to 100 points)
     if (guess.toLowerCase().includes(target.slice(0, 3).toLowerCase()) || 
         target.toLowerCase().includes(guess.slice(0, 3).toLowerCase())) {
-      score += 15;
+      score += 100;
     }
     
-    return Math.min(99, Math.max(0, score));
+    return Math.min(999, Math.max(0, score));
   }
 
   getScoreColor(score: number): string {
-    if (score >= 80) return 'score-excellent';
-    if (score >= 60) return 'score-good';
-    if (score >= 40) return 'score-medium';
-    if (score >= 20) return 'score-low';
+    if (score >= 800) return 'score-excellent';
+    if (score >= 600) return 'score-good';
+    if (score >= 400) return 'score-medium';
+    if (score >= 200) return 'score-low';
     return 'score-poor';
   }
 
+  getScoreEmoji(score: number): string {
+    if (score === 1000) return '🎉';
+    if (score >= 900) return '🤩';
+    if (score >= 800) return '😍';
+    if (score >= 700) return '😊';
+    if (score >= 600) return '🙂';
+    if (score >= 500) return '😐';
+    if (score >= 400) return '🤔';
+    if (score >= 300) return '😕';
+    if (score >= 200) return '😞';
+    if (score >= 100) return '😫';
+    return '🥶';
+  }
+
   getScoreLabel(score: number): string {
-    if (score === 100) return 'PERFECTO!';
-    if (score >= 80) return 'Excelente';
-    if (score >= 60) return 'Bien';
-    if (score >= 40) return 'Regular';
-    if (score >= 20) return 'Lejos';
+    if (score === 1000) return 'PERFECTO!';
+    if (score >= 800) return 'Excelente';
+    if (score >= 600) return 'Bien';
+    if (score >= 400) return 'Regular';
+    if (score >= 200) return 'Lejos';
     return 'Muy lejos';
   }
 }

@@ -1,16 +1,19 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { GameGuess } from "../../services/gameService";
+import { GameGuess, GameService } from "../../services/gameService";
 
 interface GuessHistoryProps {
   guesses: GameGuess[];
 }
 
 export const GuessHistory = ({ guesses }: GuessHistoryProps) => {
+  const gameService = GameService.getInstance();
+
   const getProgressColor = (score: number) => {
-    if (score >= 80) return 'hsl(142, 71%, 45%)'; // green
-    if (score >= 60) return 'hsl(47, 96%, 53%)'; // yellow
-    if (score >= 40) return 'hsl(25, 95%, 53%)'; // orange
+    if (score >= 800) return 'hsl(142, 71%, 45%)'; // green
+    if (score >= 600) return 'hsl(47, 96%, 53%)'; // yellow
+    if (score >= 400) return 'hsl(25, 95%, 53%)'; // orange
+    if (score >= 200) return 'hsl(220, 91%, 56%)'; // blue
     return 'hsl(0, 84%, 60%)'; // red
   };
 
@@ -35,22 +38,26 @@ export const GuessHistory = ({ guesses }: GuessHistoryProps) => {
             <Card 
               key={`${guess.word}-${guess.timestamp.getTime()}`}
               className={`p-4 transition-all duration-300 hover:scale-[1.02] ${
-                guess.score === 100 ? 'ring-2 ring-green-400 bg-green-50' : 'hover:shadow-md'
+                guess.score === 1000 ? 'ring-2 ring-green-400 bg-green-50' : 'hover:shadow-md'
               }`}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
-                  <span className="text-lg font-medium text-foreground min-w-[80px]">
-                    {guess.word}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{gameService.getScoreEmoji(guess.score)}</span>
+                    <span className="text-lg font-medium text-foreground min-w-[80px]">
+                      {guess.word}
+                    </span>
+                  </div>
                   
                   <div className="flex-1 max-w-xs">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm font-medium">{guess.score}</span>
-                      <span className="text-xs text-muted-foreground">/ 100</span>
+                      <span className="text-xs text-muted-foreground">/ 1000</span>
+                      <span className="text-xs text-muted-foreground ml-2">{gameService.getScoreLabel(guess.score)}</span>
                     </div>
                     <Progress 
-                      value={guess.score} 
+                      value={(guess.score / 1000) * 100} 
                       className="h-3"
                       style={{
                         '--progress-background': getProgressColor(guess.score)
