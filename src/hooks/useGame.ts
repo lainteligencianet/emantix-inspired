@@ -53,7 +53,7 @@ export const useGame = () => {
     localStorage.setItem(`cemantix-es-${state.gameDate}`, JSON.stringify(state));
   }, []);
 
-  const makeGuess = useCallback((word: string) => {
+  const makeGuess = useCallback(async (word: string) => {
     if (!word.trim() || gameState.isComplete) return;
     
     const normalizedWord = word.trim().toLowerCase();
@@ -63,7 +63,7 @@ export const useGame = () => {
       return;
     }
 
-    const score = gameService.calculateScore(normalizedWord, gameState.currentWord);
+    const score = await gameService.calculateScore(normalizedWord, gameState.currentWord);
     const newGuess: GameGuess = {
       word: normalizedWord,
       score,

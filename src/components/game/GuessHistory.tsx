@@ -1,14 +1,18 @@
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { GameGuess } from "../../services/gameService";
-import { GameService } from "../../services/gameService";
 
 interface GuessHistoryProps {
   guesses: GameGuess[];
 }
 
 export const GuessHistory = ({ guesses }: GuessHistoryProps) => {
-  const gameService = GameService.getInstance();
+  const getProgressColor = (score: number) => {
+    if (score >= 80) return 'hsl(142, 71%, 45%)'; // green
+    if (score >= 60) return 'hsl(47, 96%, 53%)'; // yellow
+    if (score >= 40) return 'hsl(25, 95%, 53%)'; // orange
+    return 'hsl(0, 84%, 60%)'; // red
+  };
 
   if (guesses.length === 0) {
     return (
@@ -27,9 +31,6 @@ export const GuessHistory = ({ guesses }: GuessHistoryProps) => {
       
       <div className="max-h-96 overflow-y-auto space-y-2">
         {guesses.map((guess, index) => {
-          const scoreColor = gameService.getScoreColor(guess.score);
-          const scoreLabel = gameService.getScoreLabel(guess.score);
-          
           return (
             <Card 
               key={`${guess.word}-${guess.timestamp.getTime()}`}
@@ -38,38 +39,28 @@ export const GuessHistory = ({ guesses }: GuessHistoryProps) => {
               }`}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-medium text-foreground">
+                <div className="flex items-center gap-4 flex-1">
+                  <span className="text-lg font-medium text-foreground min-w-[80px]">
                     {guess.word}
                   </span>
-                  <Badge 
-                    variant="outline" 
-                    className={`text-${scoreColor} border-${scoreColor}/30 bg-${scoreColor}/10`}
-                  >
-                    {scoreLabel}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <div className={`text-2xl font-bold text-${scoreColor}`}>
-                      {guess.score}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      #{index + 1}
-                    </div>
-                  </div>
                   
-                  <div 
-                    className={`w-12 h-12 rounded-full bg-${scoreColor}/20 border-2 border-${scoreColor}/40 flex items-center justify-center`}
-                  >
-                    <div 
-                      className={`w-8 h-8 rounded-full bg-${scoreColor}`}
+                  <div className="flex-1 max-w-xs">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium">{guess.score}</span>
+                      <span className="text-xs text-muted-foreground">/ 100</span>
+                    </div>
+                    <Progress 
+                      value={guess.score} 
+                      className="h-3"
                       style={{
-                        transform: `scale(${Math.max(0.3, guess.score / 100)})`
-                      }}
+                        '--progress-background': getProgressColor(guess.score)
+                      } as React.CSSProperties}
                     />
                   </div>
+                </div>
+                
+                <div className="text-xs text-muted-foreground ml-4">
+                  #{index + 1}
                 </div>
               </div>
             </Card>

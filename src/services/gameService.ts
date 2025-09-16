@@ -16,6 +16,8 @@ export class GameService {
   private words: string[] = [];
   private currentWord: string = '';
   private gameDate: string = '';
+  private embeddings: Map<string, number[]> = new Map();
+  private pipeline: any = null;
 
   static getInstance(): GameService {
     if (!GameService.instance) {
@@ -29,10 +31,48 @@ export class GameService {
       const response = await fetch('/data/mots.txt');
       const text = await response.text();
       this.words = text.split('\n').filter(word => word.trim().length > 0);
+      
+      // Initialize embeddings model
+      await this.initializeEmbeddings();
     } catch (error) {
       console.error('Error loading words:', error);
       // Fallback words in case of error
       this.words = ['casa', 'perro', 'gato', 'agua', 'fuego', 'tiempo', 'vida', 'amor'];
+    }
+  }
+
+  private async initializeEmbeddings(): Promise<void> {
+    try {
+      const { pipeline } = await import('@huggingface/transformers');
+      
+      console.log('Loading embeddings model...');
+      this.pipeline = await pipeline(
+        'feature-extraction',
+        'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+        { device: 'cpu' }
+      );
+      
+      console.log('Computing embeddings for all words...');
+      // Compute embeddings for all words in batches
+      const batchSize = 50;
+      for (let i = 0; i < this.words.length; i += batchSize) {
+        const batch = this.words.slice(i, i + batchSize);
+        const embeddings = await this.pipeline(batch, { pooling: 'mean', normalize: true });
+        
+        batch.forEach((word, idx) => {
+          this.embeddings.set(word.toLowerCase(), Array.from(embeddings[idx].data));
+        });
+        
+        // Show progress
+        if (i % 100 === 0) {
+          console.log(`Processed ${Math.min(i + batchSize, this.words.length)}/${this.words.length} words`);
+        }
+      }
+      
+      console.log('Embeddings ready!');
+    } catch (error) {
+      console.error('Error initializing embeddings:', error);
+      console.log('Falling back to simple scoring...');
     }
   }
 
@@ -60,14 +100,61 @@ export class GameService {
     return Math.abs(hash);
   }
 
-  calculateScore(guess: string, target: string): number {
-    // Factice scoring system - will be replaced with semantic similarity later
-    let score = 0;
+  async calculateScore(guess: string, target: string): Promise<number> {
+    const guessLower = guess.toLowerCase();
+    const targetLower = target.toLowerCase();
     
     // Perfect match
-    if (guess.toLowerCase() === target.toLowerCase()) {
+    if (guessLower === targetLower) {
       return 100;
     }
+
+    // Try semantic similarity if embeddings are available
+    if (this.pipeline && this.embeddings.has(targetLower)) {
+      try {
+        // Get or compute embedding for the guess
+        let guessEmbedding: number[];
+        if (this.embeddings.has(guessLower)) {
+          guessEmbedding = this.embeddings.get(guessLower)!;
+        } else {
+          const embeddings = await this.pipeline([guess], { pooling: 'mean', normalize: true });
+          guessEmbedding = Array.from(embeddings[0].data);
+        }
+        
+        const targetEmbedding = this.embeddings.get(targetLower)!;
+        
+        // Calculate cosine similarity
+        const similarity = this.cosineSimilarity(guessEmbedding, targetEmbedding);
+        
+        // Convert similarity (-1 to 1) to score (0 to 99)
+        const score = Math.round(((similarity + 1) / 2) * 99);
+        return Math.max(0, Math.min(99, score));
+        
+      } catch (error) {
+        console.error('Error calculating semantic similarity:', error);
+      }
+    }
+
+    // Fallback to simple scoring
+    return this.calculateSimpleScore(guess, target);
+  }
+
+  private cosineSimilarity(a: number[], b: number[]): number {
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    
+    for (let i = 0; i < a.length; i++) {
+      dotProduct += a[i] * b[i];
+      normA += a[i] * a[i];
+      normB += b[i] * b[i];
+    }
+    
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  private calculateSimpleScore(guess: string, target: string): number {
+    let score = 0;
     
     // Length similarity (up to 20 points)
     const lengthDiff = Math.abs(guess.length - target.length);
@@ -104,7 +191,7 @@ export class GameService {
       score += 15;
     }
     
-    return Math.min(99, Math.max(0, score)); // Cap at 99 to reserve 100 for perfect match
+    return Math.min(99, Math.max(0, score));
   }
 
   getScoreColor(score: number): string {
