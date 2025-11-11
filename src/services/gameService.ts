@@ -30,11 +30,9 @@ export class GameService {
     try {
       const response = await fetch('/data/palabras.txt');
       const text = await response.text();
-      // Parse the numbered format: "1: palabra"
+      // Parse simple format: one word per line
       this.words = text.split('\n')
         .filter(line => line.trim().length > 0)
-        .map(line => line.split(': ')[1])
-        .filter(word => word && word.trim().length > 0)
         .map(word => word.trim());
       
       // Initialize embeddings model

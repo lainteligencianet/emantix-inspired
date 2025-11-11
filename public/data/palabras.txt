@@ -1,156 +1,504 @@
-1: agua
-2: aire
-3: amor
-4: animal
-5: árbol
-6: arte
-7: auto
-8: avión
-9: barco
-10: boca
-11: bola
-12: bolsa
-13: brazo
-14: caballo
-15: cabeza
-16: café
-17: caja
-18: calle
-19: cama
-20: campo
-21: cara
-22: carne
-23: carta
-24: casa
-25: cielo
-26: cine
-27: ciudad
-28: clase
-29: cocina
-28: color
-30: comida
-31: corazón
-32: cosa
-33: cuchillo
-34: cuerpo
-35: cueva
-36: dedo
-37: diente
-38: dinero
-39: escritorio
-40: escuela
-41: estrella
-42: familia
-43: flor
-44: foto
-45: fruta
-46: fuego
-47: gato
-48: gente
-49: guerra
-50: hijo
-51: historia
-52: hombre
-53: hora
-54: hospital
-55: hotel
-56: huevo
-57: idea
-58: iglesia
-59: imagen
-60: jardín
-61: juego
-62: lago
-63: lengua
-64: libro
-65: luz
-66: mano
-67: mar
-68: máquina
-69: mesa
-70: metal
-71: miedo
-72: montaña
-73: muerte
-74: mujer
-75: mundo
-76: música
-77: niño
-78: noche
-79: nombre
-80: número
-81: obra
-82: ojo
-83: olor
-84: orden
-85: oro
-86: país
-87: palabra
-88: pan
-89: papel
-90: parque
-91: parte
-92: país
-93: perro
-94: persona
-95: pie
-96: piedra
-97: pierna
-98: planta
-99: plata
-100: plato
-101: playa
-102: plaza
-103: pollo
-104: precio
-105: pregunta
-106: problema
-107: pueblo
-108: puente
-109: puerta
-110: radio
-111: ratón
-112: regalo
-113: reloj
-114: respuesta
-115: restaurante
-116: río
-117: ropa
-118: rosa
-119: sal
-120: sala
-121: sangre
-122: semana
-123: señor
-124: silla
-125: sitio
-126: sol
-127: sombra
-128: sonido
-129: sueño
-130: suelo
-131: taza
-132: teatro
-133: techo
-134: teléfono
-135: televisión
-136: templo
-137: tenedor
-138: tiempo
-139: tierra
-140: tigre
-141: trabajo
-142: tren
-143: vaca
-144: valle
-145: vaso
-146: vecino
-147: ventana
-148: verdad
-149: vestido
-150: viaje
-151: vida
-152: viento
-153: vino
-154: voz
-155: zapato
+Llave
+Silla
+Libro
+Cuchillo
+Reloj
+Almohada
+Cartera
+Escalera
+Utensilio
+Cepillo
+Pañuelo
+Cubierta
+Documento
+Martillo
+Mesa
+Papel
+Cuchara
+Cuerda
+Manta
+Moneda
+Techo
+Recipiente
+Jabón
+Cesta
+Tubería
+Espejo
+Pared
+Taza
+Tenedor
+Aguja
+Lámpara
+Pasaporte
+Sótano
+Cajón
+Toalla
+Candado
+Tornillo
+Tijeras
+Ventana
+Plato
+Botella
+Hilo
+Vela
+Equipaje
+Puerta
+Alfombra
+Perfume
+Timbre
+Batería
+Duda
+Felicidad
+Misterio
+Razón
+Calma
+Esencia
+Valentía
+Identidad
+Egoísmo
+Vínculo
+Ansiedad
+Creencia
+Imaginación
+Fuerza
+Destino
+Mentira
+Símbolo
+Placer
+Soledad
+Sacrificio
+Compromiso
+Lealtad
+Victoria
+Orgullo
+Teoría
+Inspiración
+Coraje
+Memoria
+Verdad
+Justicia
+Deseo
+Dolor
+Genio
+Amistad
+Angustia
+Fracaso
+Traición
+Éxito
+Confianza
+Experiencia
+Sabiduría
+Esperanza
+Libertad
+Época
+Conciencia
+Silencio
+Lógica
+Progreso
+Tentación
+Ilusión
+Respeto
+Melancolía
+Disciplina
+Sentimiento
+Museo
+Arquitectura
+Escritor
+Canción
+Gobierno
+Elección
+Empleo
+Frontera
+Religión
+Artesano
+Moda
+Regla
+Opinión
+Teatro
+Estatua
+Poema
+Melodía
+Ley
+Voto
+Sindicato
+Bandera
+Templo
+Periodista
+Tendencia
+Etiqueta
+Biblioteca
+Pintura
+Leyenda
+Ritmo
+Policía
+Economía
+Empresa
+Himno
+Sacerdote
+Carrera
+Conversación
+Celebración
+Ciudad
+Escultura
+Mito
+Orquesta
+Juez
+Impuesto
+Comercio
+Ceremonia
+Milagro
+Fama
+Idioma
+Multitud
+Corazón
+Cerebro
+Hueso
+Sangre
+Piel
+Músculo
+Pulmón
+Estómago
+Hígado
+Riñón
+Diente
+Lengua
+Ojo
+Nariz
+Oreja
+Mano
+Pie
+Brazo
+Pierna
+Dedo
+Uña
+Pelo
+Barba
+Bigote
+Ceja
+Pestaña
+Garganta
+Cuello
+Hombro
+Espalda
+Pecho
+Vientre
+Cadera
+Rodilla
+Tobillo
+Talón
+Cráneo
+Esqueleto
+Vena
+Arteria
+Nervio
+Célula
+Tejido
+Órgano
+Salud
+Enfermedad
+Virus
+Bacteria
+Fiebre
+Medicina
+Hospital
+Médico
+Paciente
+Microscopio
+Telescopio
+Cohete
+Satélite
+Algoritmo
+Electricidad
+Fórmula
+Robot
+Átomo
+Molécula
+Partícula
+Neutrón
+Protón
+Electrón
+Gen
+ADN
+Laboratorio
+Hipótesis
+Gravedad
+Imán
+Brújula
+Circuito
+Pantalla
+Teclado
+Ratón
+Software
+Hardware
+Red
+Internet
+Código
+Programa
+Motor
+Engranaje
+Lente
+Espectro
+Frecuencia
+Onda
+Vacuna
+Química
+Física
+Biología
+Geología
+Astronomía
+Ecuación
+Variable
+Perro
+Gato
+Caballo
+Vaca
+Oveja
+Cerdo
+Pollo
+Pato
+Gallo
+Gallina
+Ratón
+Rata
+Conejo
+León
+Tigre
+Elefante
+Jirafa
+Cebra
+Mono
+Simio
+Oso
+Lobo
+Zorro
+Ciervo
+Tiburón
+Delfín
+Ballena
+Pulpo
+Calamar
+Cangrejo
+Camarón
+Pez
+Águila
+Halcón
+Búho
+Cuervo
+Paloma
+Loro
+Colibrí
+Mariposa
+Abeja
+Hormiga
+Araña
+Escorpión
+Mosquito
+Mosca
+Saltamontes
+Grillo
+Serpiente
+Lagarto
+Rana
+Sapo
+Tortuga
+Cocodrilo
+Pan
+Arroz
+Harina
+Azúcar
+Sal
+Pimienta
+Aceite
+Vinagre
+Queso
+Leche
+Huevo
+Mantequilla
+Miel
+Ajo
+Cebolla
+Tomate
+Patata
+Lechuga
+Zanahoria
+Manzana
+Naranja
+Plátano
+Fresa
+Uva
+Limón
+Carne
+Pescado
+Ternera
+Cordero
+Jamón
+Salchicha
+Lenteja
+Garbanzo
+Frijol
+Maíz
+Trigo
+Avena
+Café
+Té
+Vino
+Cerveza
+Agua
+Zumo
+Canela
+Vainilla
+Chocolate
+Galleta
+Sopa
+Caldo
+Yogur
+Nuez
+Almendra
+Madera
+Metal
+Cristal
+Plástico
+Piedra
+Arcilla
+Cemento
+Ladrillo
+Yeso
+Arena
+Goma
+Cuero
+Seda
+Algodón
+Lana
+Terciopelo
+Nylon
+Poliéster
+Oro
+Plata
+Cobre
+Hierro
+Bronce
+Pintura
+Barniz
+Esmalte
+Tinta
+Color
+Rojo
+Azul
+Verde
+Gris
+Negro
+Blanco
+Amarillo
+Violeta
+Naranja
+Suavidad
+Aspereza
+Rugosidad
+Transparencia
+Opacidad
+Brillo
+Textura
+Superficie
+Densidad
+Volumen
+Forma
+Destornillador
+Alicates
+Sierra
+Taladro
+Clavo
+Tornillo
+Tuerca
+Arandela
+Llave inglesa
+Metro
+Nivel
+Pincel
+Brocha
+Espátula
+Tijeras
+Cincel
+Lima
+Yunque
+Soldadura
+Polea
+Palanca
+Rueda
+Engranaje
+Bisturí
+Tubo
+Balón
+Raqueta
+Palo
+Disco
+Portería
+Canasta
+Red
+Anillo
+Valla
+Espada
+Arco
+Flecha
+Balancín
+Timón
+Vela
+Anzuelo
+Cebo
+Caña
+Guantes
+Casco
+Botas
+Gafas
+Uniforme
+Trofeo
+Medalla
+Siglo
+Década
+Milenio
+Año
+Mes
+Semana
+Día
+Hora
+Minuto
+Segundo
+Instante
+Momento
+Eternidad
+Pasado
+Presente
+Futuro
+Mañana
+Tarde
+Noche
+Amanecer
+Atardecer
+Medianoche
+Mediodía
+Calendario
+Fecha
+Estación
+Primavera
+Verano
+Otoño
+Invierno
+Fiesta
+Boda
+Funeral
+Nacimiento
+Aniversario
+Cumpleaños
+Celebración
+Reunión
+Vacaciones
+Viaje
+Recuerdo
+Cita
+Jubilación
+Infancia
+Juventud
+Madurez
+Vejez
+Época
+Era
+Período

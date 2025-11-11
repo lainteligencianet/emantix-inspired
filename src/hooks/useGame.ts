@@ -24,7 +24,7 @@ export const useGame = () => {
       const today = new Date().toISOString().split('T')[0];
       
       // Load saved game state for today
-      const savedState = localStorage.getItem(`cemantix-es-${today}`);
+      const savedState = localStorage.getItem(`palabra-guru-${today}`);
       if (savedState) {
         const parsed = JSON.parse(savedState);
         setGameState({
@@ -50,7 +50,7 @@ export const useGame = () => {
   };
 
   const saveGameState = useCallback((state: GameState) => {
-    localStorage.setItem(`cemantix-es-${state.gameDate}`, JSON.stringify(state));
+    localStorage.setItem(`palabra-guru-${state.gameDate}`, JSON.stringify(state));
   }, []);
 
   const makeGuess = useCallback(async (word: string) => {
@@ -88,7 +88,7 @@ export const useGame = () => {
 
   const resetGame = useCallback(() => {
     const today = new Date().toISOString().split('T')[0];
-    localStorage.removeItem(`cemantix-es-${today}`);
+    localStorage.removeItem(`palabra-guru-${today}`);
     initGame();
   }, []);
 

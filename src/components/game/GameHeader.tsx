@@ -10,7 +10,7 @@ export const GameHeader = ({ guessCount, isComplete, targetWord }: GameHeaderPro
   return (
     <div className="text-center mb-8">
       <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
-        Cemantix ES
+        Palabra Gurú
       </h1>
       <p className="text-muted-foreground mb-4">
         Encuentra la palabra secreta usando la similaridad semántica
