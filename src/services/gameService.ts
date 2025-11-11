@@ -54,7 +54,7 @@ export class GameService {
       this.pipeline = await pipeline(
         'feature-extraction',
         'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-        { device: 'cpu' }
+        { device: 'wasm' }
       );
       
       console.log('Computing embeddings for all words...');

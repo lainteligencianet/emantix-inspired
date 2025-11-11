@@ -73,7 +73,7 @@ export const useGame = () => {
     const newState: GameState = {
       ...gameState,
       guesses: [...gameState.guesses, newGuess].sort((a, b) => b.score - a.score),
-      isComplete: score === 100
+      isComplete: score === 1000
     };
 
     setGameState(newState);
