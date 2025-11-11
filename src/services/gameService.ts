@@ -46,6 +46,17 @@ export class GameService {
     }
   }
 
+  private normalizeWord(word: string): string {
+    return word.toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  isValidWord(word: string): boolean {
+    const normalized = this.normalizeWord(word);
+    return this.words.some(w => this.normalizeWord(w) === normalized);
+  }
+
   private async initializeEmbeddings(): Promise<void> {
     try {
       const { pipeline } = await import('@huggingface/transformers');
@@ -65,7 +76,7 @@ export class GameService {
         const embeddings = await this.pipeline(batch, { pooling: 'mean', normalize: true });
         
         batch.forEach((word, idx) => {
-          this.embeddings.set(word.toLowerCase(), Array.from(embeddings[idx].data));
+          this.embeddings.set(this.normalizeWord(word), Array.from(embeddings[idx].data));
         });
         
         // Show progress
@@ -106,27 +117,27 @@ export class GameService {
   }
 
   async calculateScore(guess: string, target: string): Promise<number> {
-    const guessLower = guess.toLowerCase();
-    const targetLower = target.toLowerCase();
+    const guessNormalized = this.normalizeWord(guess);
+    const targetNormalized = this.normalizeWord(target);
     
-    // Perfect match
-    if (guessLower === targetLower) {
+    // Perfect match (ignoring accents)
+    if (guessNormalized === targetNormalized) {
       return 1000;
     }
 
     // Try semantic similarity if embeddings are available
-    if (this.pipeline && this.embeddings.has(targetLower)) {
+    if (this.pipeline && this.embeddings.has(targetNormalized)) {
       try {
         // Get or compute embedding for the guess
         let guessEmbedding: number[];
-        if (this.embeddings.has(guessLower)) {
-          guessEmbedding = this.embeddings.get(guessLower)!;
+        if (this.embeddings.has(guessNormalized)) {
+          guessEmbedding = this.embeddings.get(guessNormalized)!;
         } else {
           const embeddings = await this.pipeline([guess], { pooling: 'mean', normalize: true });
           guessEmbedding = Array.from(embeddings[0].data);
         }
         
-        const targetEmbedding = this.embeddings.get(targetLower)!;
+        const targetEmbedding = this.embeddings.get(targetNormalized)!;
         
         // Calculate cosine similarity
         const similarity = this.cosineSimilarity(guessEmbedding, targetEmbedding);

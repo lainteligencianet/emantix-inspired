@@ -13,7 +13,7 @@ const Game = () => {
   const { gameState, isLoading, makeGuess, resetGame } = useGame();
   const [animatingGuess, setAnimatingGuess] = useState<any>(null);
 
-  const handleGuess = (word: string) => {
+  const handleGuess = async (word: string) => {
     // Check for duplicate first
     if (gameState.guesses.some(g => g.word.toLowerCase() === word.toLowerCase())) {
       toast({
@@ -24,8 +24,18 @@ const Game = () => {
       return;
     }
 
-    makeGuess(word);
+    const result = await makeGuess(word);
     
+    // Check if word is invalid
+    if (result && 'error' in result) {
+      toast({
+        title: "Palabra no conocida",
+        description: "Esta palabra no está en nuestro diccionario español.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     // Get the latest guess after making it (we'll need to wait a bit for state update)
     setTimeout(() => {
       const lastGuess = gameState.guesses[0];

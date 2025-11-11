@@ -54,13 +54,18 @@ export const useGame = () => {
   }, []);
 
   const makeGuess = useCallback(async (word: string) => {
-    if (!word.trim() || gameState.isComplete) return;
+    if (!word.trim() || gameState.isComplete) return null;
     
     const normalizedWord = word.trim().toLowerCase();
     
     // Check if word already guessed
     if (gameState.guesses.some(g => g.word.toLowerCase() === normalizedWord)) {
-      return;
+      return null;
+    }
+
+    // Check if word is valid Spanish word
+    if (!gameService.isValidWord(normalizedWord)) {
+      return { error: 'palabra no conocida' };
     }
 
     const score = await gameService.calculateScore(normalizedWord, gameState.currentWord);
@@ -78,6 +83,7 @@ export const useGame = () => {
 
     setGameState(newState);
     saveGameState(newState);
+    return { success: true, guess: newGuess };
   }, [gameState, gameService, saveGameState]);
 
   const resetGame = useCallback(() => {
