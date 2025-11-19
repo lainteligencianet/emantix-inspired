@@ -57,16 +57,21 @@ export class GameService {
 
   private async initializeEmbeddings(): Promise<void> {
     try {
+      console.log('🔄 Iniciando carga del modelo de embeddings...');
       const { pipeline } = await import('@huggingface/transformers');
       
-      console.log('Loading embeddings model...');
+      console.log('📦 Cargando modelo multilingual...');
       this.pipeline = await pipeline(
         'feature-extraction',
         'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-        { device: 'wasm' }
+        { device: 'wasm', progress_callback: (progress: any) => {
+          if (progress.status === 'progress') {
+            console.log(`⏳ Descargando modelo: ${progress.file} - ${Math.round(progress.progress || 0)}%`);
+          }
+        }}
       );
       
-      console.log('Computing embeddings for all words...');
+      console.log('✅ Modelo cargado! Calculando embeddings para todas las palabras...');
       // Compute embeddings for all words in batches
       const batchSize = 50;
       for (let i = 0; i < this.words.length; i += batchSize) {
@@ -79,14 +84,14 @@ export class GameService {
         
         // Show progress
         if (i % 100 === 0) {
-          console.log(`Processed ${Math.min(i + batchSize, this.words.length)}/${this.words.length} words`);
+          console.log(`📊 Procesadas ${Math.min(i + batchSize, this.words.length)}/${this.words.length} palabras`);
         }
       }
       
-      console.log('Embeddings ready!');
+      console.log(`🎉 ¡Embeddings listos! Total de palabras procesadas: ${this.embeddings.size}`);
     } catch (error) {
-      console.error('Error initializing embeddings:', error);
-      console.log('Falling back to simple scoring...');
+      console.error('❌ Error inicializando embeddings:', error);
+      console.log('⚠️ Usando puntuación simple como fallback...');
     }
   }
 
@@ -120,6 +125,7 @@ export class GameService {
     
     // Perfect match (ignoring accents)
     if (guessNormalized === targetNormalized) {
+      console.log(`🎯 ¡Palabra exacta! ${guess}`);
       return 1000;
     }
 
@@ -129,8 +135,10 @@ export class GameService {
         // Get or compute embedding for the guess
         let guessEmbedding: number[];
         if (this.embeddings.has(guessNormalized)) {
+          console.log(`📚 Usando embedding precalculado para: ${guess}`);
           guessEmbedding = this.embeddings.get(guessNormalized)!;
         } else {
+          console.log(`🔄 Calculando embedding para palabra nueva: ${guess}`);
           const embeddings = await this.pipeline([guess], { pooling: 'mean', normalize: true });
           guessEmbedding = Array.from(embeddings[0].data);
         }
@@ -142,15 +150,21 @@ export class GameService {
         
         // Convert similarity (-1 to 1) to score (0 to 999)
         const score = Math.round(((similarity + 1) / 2) * 999);
+        console.log(`🔢 Similaridad semántica entre "${guess}" y "${target}": ${similarity.toFixed(4)} → Score: ${score}`);
         return Math.max(0, Math.min(999, score));
         
       } catch (error) {
-        console.error('Error calculating semantic similarity:', error);
+        console.error('❌ Error calculando similaridad semántica:', error);
+        console.log('⚠️ Usando puntuación simple');
       }
+    } else if (!this.pipeline) {
+      console.log('⚠️ Modelo de embeddings no disponible, usando puntuación simple');
     }
 
     // Fallback to simple scoring
-    return this.calculateSimpleScore(guess, target);
+    const simpleScore = this.calculateSimpleScore(guess, target);
+    console.log(`📊 Puntuación simple para "${guess}": ${simpleScore}`);
+    return simpleScore;
   }
 
   private cosineSimilarity(a: number[], b: number[]): number {
