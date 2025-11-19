@@ -13,7 +13,8 @@ export interface GameState {
 
 export class GameService {
   private static instance: GameService;
-  private words: string[] = [];
+  private words: string[] = []; // Words for daily word selection
+  private dictionary: Set<string> = new Set(); // Full Spanish dictionary for validation
   private currentWord: string = '';
   private gameDate: string = '';
   private embeddings: Map<string, number[]> = new Map();
@@ -28,12 +29,23 @@ export class GameService {
 
   async loadWords(): Promise<void> {
     try {
-      const response = await fetch('/data/palabras.txt');
-      const text = await response.text();
-      // Parse simple format: one word per line
-      this.words = text.split('\n')
+      // Load the daily words list (504 words for daily selection)
+      const responseDaily = await fetch('/data/palabras.txt');
+      const textDaily = await responseDaily.text();
+      this.words = textDaily.split('\n')
         .filter(line => line.trim().length > 0)
         .map(word => word.trim());
+      
+      // Load the complete Spanish dictionary for validation
+      console.log('📚 Cargando diccionario completo...');
+      const responseDictionary = await fetch('/data/diccionario-completo.txt');
+      const textDictionary = await responseDictionary.text();
+      const dictionaryWords = textDictionary.split('\n')
+        .filter(line => line.trim().length > 0)
+        .map(word => this.normalizeWord(word.trim()));
+      
+      this.dictionary = new Set(dictionaryWords);
+      console.log(`✅ Diccionario cargado: ${this.dictionary.size} palabras`);
       
       // Initialize embeddings model
       await this.initializeEmbeddings();
@@ -52,7 +64,12 @@ export class GameService {
 
   isValidWord(word: string): boolean {
     const normalized = this.normalizeWord(word);
-    return this.words.some(w => this.normalizeWord(w) === normalized);
+    // Check if word is in the complete Spanish dictionary
+    const isValid = this.dictionary.has(normalized);
+    if (!isValid) {
+      console.log(`❌ Palabra no encontrada en el diccionario: ${word}`);
+    }
+    return isValid;
   }
 
   private async initializeEmbeddings(): Promise<void> {
