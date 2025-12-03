@@ -40,23 +40,19 @@ export class GameService {
 
   async loadWords(): Promise<void> {
     try {
-      // Load the daily words list (504 words for daily selection)
+      // Load the daily words list (504 words for daily selection) - this is fast
       const responseDaily = await fetch('/data/palabras.txt');
       const textDaily = await responseDaily.text();
       this.words = textDaily.split('\n')
         .filter(line => line.trim().length > 0)
         .map(word => word.trim());
       
-      // Load the complete Spanish dictionary for validation
-      console.log('📚 Cargando diccionario completo...');
-      const responseDictionary = await fetch('/data/diccionario-completo.txt');
-      const textDictionary = await responseDictionary.text();
-      const dictionaryWords = textDictionary.split('\n')
-        .filter(line => line.trim().length > 0)
-        .map(word => this.normalizeWord(word.trim()));
+      // Add daily words to dictionary immediately so we can start playing
+      this.words.forEach(word => this.dictionary.add(this.normalizeWord(word)));
+      console.log(`✅ Palabras del juego cargadas: ${this.words.length}`);
       
-      this.dictionary = new Set(dictionaryWords);
-      console.log(`✅ Diccionario cargado: ${this.dictionary.size} palabras`);
+      // Load the complete Spanish dictionary in background (non-blocking)
+      this.loadDictionaryAsync();
       
       // Initialize embeddings model in background (non-blocking)
       this.initializeEmbeddings();
@@ -64,6 +60,38 @@ export class GameService {
       console.error('Error loading words:', error);
       // Fallback words in case of error
       this.words = ['casa', 'perro', 'gato', 'agua', 'fuego', 'tiempo', 'vida', 'amor'];
+      this.words.forEach(word => this.dictionary.add(this.normalizeWord(word)));
+    }
+  }
+
+  private async loadDictionaryAsync(): Promise<void> {
+    try {
+      console.log('📚 Cargando diccionario completo en segundo plano...');
+      const responseDictionary = await fetch('/data/diccionario-completo.txt');
+      const textDictionary = await responseDictionary.text();
+      
+      // Process in chunks to avoid blocking UI
+      const lines = textDictionary.split('\n');
+      const chunkSize = 5000;
+      
+      for (let i = 0; i < lines.length; i += chunkSize) {
+        const chunk = lines.slice(i, i + chunkSize);
+        chunk.forEach(line => {
+          const word = line.trim();
+          if (word.length > 0) {
+            this.dictionary.add(this.normalizeWord(word));
+          }
+        });
+        
+        // Yield to main thread every chunk
+        if (i + chunkSize < lines.length) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      }
+      
+      console.log(`✅ Diccionario completo cargado: ${this.dictionary.size} palabras`);
+    } catch (error) {
+      console.error('Error loading dictionary:', error);
     }
   }
 
@@ -229,10 +257,11 @@ export class GameService {
         // Calculate cosine similarity
         const similarity = this.cosineSimilarity(guessEmbedding, targetEmbedding);
         
-        // Convert similarity (-1 to 1) to score (0 to 999)
-        const score = Math.round(((similarity + 1) / 2) * 999);
+        // Convert similarity to score using calibrated scaling
+        // The model typically outputs 0.3-0.5 for unrelated, 0.6-0.8 for related, 0.85+ for very related
+        const score = this.calibrateSimilarityScore(similarity);
         console.log(`🔢 Similaridad semántica entre "${guess}" y "${target}": ${similarity.toFixed(4)} → Score: ${score}`);
-        return Math.max(0, Math.min(999, score));
+        return score;
         
       } catch (error) {
         console.error('❌ Error calculando similaridad semántica:', error);
@@ -246,6 +275,37 @@ export class GameService {
     const simpleScore = this.calculateSimpleScore(guess, target);
     console.log(`📊 Puntuación simple para "${guess}": ${simpleScore}`);
     return simpleScore;
+  }
+
+  private calibrateSimilarityScore(similarity: number): number {
+    // Calibrated scoring for paraphrase-multilingual-MiniLM-L12-v2
+    // This model gives high baseline similarity (~0.3-0.5) even for unrelated words
+    // We need to spread out the useful range (0.3 to 0.95) across 0-999
+    
+    // Piecewise linear mapping for better score distribution:
+    // similarity < 0.3  → score 0-50 (very unrelated)
+    // 0.3 - 0.5        → score 50-250 (unrelated)
+    // 0.5 - 0.65       → score 250-450 (slightly related)
+    // 0.65 - 0.75      → score 450-600 (somewhat related)
+    // 0.75 - 0.85      → score 600-800 (related)
+    // 0.85 - 0.95      → score 800-950 (very related)
+    // > 0.95           → score 950-999 (near synonyms)
+    
+    if (similarity < 0.3) {
+      return Math.round((similarity / 0.3) * 50);
+    } else if (similarity < 0.5) {
+      return Math.round(50 + ((similarity - 0.3) / 0.2) * 200);
+    } else if (similarity < 0.65) {
+      return Math.round(250 + ((similarity - 0.5) / 0.15) * 200);
+    } else if (similarity < 0.75) {
+      return Math.round(450 + ((similarity - 0.65) / 0.1) * 150);
+    } else if (similarity < 0.85) {
+      return Math.round(600 + ((similarity - 0.75) / 0.1) * 200);
+    } else if (similarity < 0.95) {
+      return Math.round(800 + ((similarity - 0.85) / 0.1) * 150);
+    } else {
+      return Math.round(950 + ((similarity - 0.95) / 0.05) * 49);
+    }
   }
 
   private cosineSimilarity(a: number[], b: number[]): number {
