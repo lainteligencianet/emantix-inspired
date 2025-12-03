@@ -19,12 +19,23 @@ export class GameService {
   private gameDate: string = '';
   private embeddings: Map<string, number[]> = new Map();
   private pipeline: any = null;
+  private modelReady: boolean = false;
+  private modelLoading: boolean = false;
+  private modelLoadPromise: Promise<void> | null = null;
 
   static getInstance(): GameService {
     if (!GameService.instance) {
       GameService.instance = new GameService();
     }
     return GameService.instance;
+  }
+
+  isModelReady(): boolean {
+    return this.modelReady;
+  }
+
+  isModelLoading(): boolean {
+    return this.modelLoading;
   }
 
   async loadWords(): Promise<void> {
@@ -47,8 +58,8 @@ export class GameService {
       this.dictionary = new Set(dictionaryWords);
       console.log(`✅ Diccionario cargado: ${this.dictionary.size} palabras`);
       
-      // Initialize embeddings model
-      await this.initializeEmbeddings();
+      // Initialize embeddings model in background (non-blocking)
+      this.initializeEmbeddings();
     } catch (error) {
       console.error('Error loading words:', error);
       // Fallback words in case of error
@@ -73,24 +84,42 @@ export class GameService {
   }
 
   private async initializeEmbeddings(): Promise<void> {
+    if (this.modelLoading || this.modelReady) return;
+    
+    this.modelLoading = true;
+    this.modelLoadPromise = this._loadModel();
+    
+    try {
+      await this.modelLoadPromise;
+    } finally {
+      this.modelLoading = false;
+    }
+  }
+
+  private async _loadModel(): Promise<void> {
     try {
       console.log('🔄 Iniciando carga del modelo de embeddings...');
       const { pipeline } = await import('@huggingface/transformers');
       
-      console.log('📦 Cargando modelo multilingual...');
+      console.log('📦 Cargando modelo multilingual (esto puede tardar 1-2 minutos la primera vez)...');
       this.pipeline = await pipeline(
         'feature-extraction',
         'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
-        { device: 'wasm', progress_callback: (progress: any) => {
-          if (progress.status === 'progress') {
-            console.log(`⏳ Descargando modelo: ${progress.file} - ${Math.round(progress.progress || 0)}%`);
+        { 
+          device: 'webgpu',
+          progress_callback: (progress: any) => {
+            if (progress.status === 'progress') {
+              console.log(`⏳ Descargando: ${progress.file} - ${Math.round(progress.progress || 0)}%`);
+            } else if (progress.status === 'done') {
+              console.log(`✅ Completado: ${progress.file}`);
+            }
           }
-        }}
+        }
       );
       
-      console.log('✅ Modelo cargado! Calculando embeddings para todas las palabras...');
+      console.log('✅ Modelo cargado! Calculando embeddings para las palabras del juego...');
       // Compute embeddings for all words in batches
-      const batchSize = 50;
+      const batchSize = 25;
       for (let i = 0; i < this.words.length; i += batchSize) {
         const batch = this.words.slice(i, i + batchSize);
         const embeddings = await this.pipeline(batch, { pooling: 'mean', normalize: true });
@@ -99,17 +128,52 @@ export class GameService {
           this.embeddings.set(this.normalizeWord(word), Array.from(embeddings[idx].data));
         });
         
-        // Show progress
-        if (i % 100 === 0) {
-          console.log(`📊 Procesadas ${Math.min(i + batchSize, this.words.length)}/${this.words.length} palabras`);
-        }
+        // Show progress every 100 words
+        const progress = Math.min(i + batchSize, this.words.length);
+        console.log(`📊 Embeddings: ${progress}/${this.words.length} palabras procesadas`);
       }
       
-      console.log(`🎉 ¡Embeddings listos! Total de palabras procesadas: ${this.embeddings.size}`);
+      this.modelReady = true;
+      console.log(`🎉 ¡Modelo semántico listo! ${this.embeddings.size} palabras con embeddings`);
     } catch (error) {
       console.error('❌ Error inicializando embeddings:', error);
-      console.log('⚠️ Usando puntuación simple como fallback...');
+      
+      // Try fallback to WASM if WebGPU fails
+      try {
+        console.log('🔄 Intentando con WASM como alternativa...');
+        const { pipeline } = await import('@huggingface/transformers');
+        this.pipeline = await pipeline(
+          'feature-extraction',
+          'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2',
+          { device: 'wasm' }
+        );
+        
+        // Compute embeddings with smaller batches for WASM
+        const batchSize = 10;
+        for (let i = 0; i < this.words.length; i += batchSize) {
+          const batch = this.words.slice(i, i + batchSize);
+          const embeddings = await this.pipeline(batch, { pooling: 'mean', normalize: true });
+          
+          batch.forEach((word, idx) => {
+            this.embeddings.set(this.normalizeWord(word), Array.from(embeddings[idx].data));
+          });
+        }
+        
+        this.modelReady = true;
+        console.log(`🎉 ¡Modelo semántico listo (WASM)! ${this.embeddings.size} palabras`);
+      } catch (fallbackError) {
+        console.error('❌ Error con WASM también:', fallbackError);
+        console.log('⚠️ El juego usará puntuación simple (menos precisa)');
+      }
     }
+  }
+
+  async waitForModel(): Promise<boolean> {
+    if (this.modelReady) return true;
+    if (this.modelLoadPromise) {
+      await this.modelLoadPromise;
+    }
+    return this.modelReady;
   }
 
   getWordOfTheDay(): string {
