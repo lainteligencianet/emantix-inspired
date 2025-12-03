@@ -3,19 +3,21 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GameService } from "@/services/gameService";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Calendar, Key } from "lucide-react";
+import { ArrowLeft, Calendar, Key, Brain, Loader2, CheckCircle, XCircle } from "lucide-react";
 
 export default function Admin() {
   const [wordOfTheDay, setWordOfTheDay] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [gameDate, setGameDate] = useState<string>("");
+  const [modelStatus, setModelStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [embeddingsCount, setEmbeddingsCount] = useState(0);
   const navigate = useNavigate();
+  const gameService = GameService.getInstance();
 
   useEffect(() => {
     const loadWordOfTheDay = async () => {
       setIsLoading(true);
       try {
-        const gameService = GameService.getInstance();
         await gameService.loadWords();
         const word = gameService.getWordOfTheDay();
         const today = new Date().toISOString().split('T')[0];
@@ -29,6 +31,18 @@ export default function Admin() {
     };
 
     loadWordOfTheDay();
+    
+    // Poll model status
+    const checkModel = setInterval(() => {
+      if (gameService.isModelReady()) {
+        setModelStatus('ready');
+        clearInterval(checkModel);
+      } else if (gameService.isModelLoading()) {
+        setModelStatus('loading');
+      }
+    }, 500);
+
+    return () => clearInterval(checkModel);
   }, []);
 
   return (
@@ -79,12 +93,50 @@ export default function Admin() {
             </Card>
 
             <Card className="p-6 bg-muted/30">
-              <h2 className="font-semibold mb-4">Información técnica</h2>
+              <h2 className="font-semibold mb-4 flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Estado del modelo semántico
+              </h2>
+              <div className="flex items-center gap-3 mb-4">
+                {modelStatus === 'loading' && (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin text-yellow-500" />
+                    <span className="text-yellow-600 dark:text-yellow-400">
+                      Cargando modelo de embeddings... (puede tardar 1-2 min)
+                    </span>
+                  </>
+                )}
+                {modelStatus === 'ready' && (
+                  <>
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    <span className="text-green-600 dark:text-green-400">
+                      Modelo listo - Similaridad semántica activa
+                    </span>
+                  </>
+                )}
+                {modelStatus === 'error' && (
+                  <>
+                    <XCircle className="h-5 w-5 text-red-500" />
+                    <span className="text-red-600 dark:text-red-400">
+                      Error - Usando puntuación simple
+                    </span>
+                  </>
+                )}
+              </div>
+              <div className="text-sm text-muted-foreground space-y-1">
+                <p>• Modelo: paraphrase-multilingual-MiniLM-L12-v2</p>
+                <p>• El modelo calcula la proximidad semántica entre palabras</p>
+                <p>• Si no carga, se usa un algoritmo simple basado en letras</p>
+              </div>
+            </Card>
+
+            <Card className="p-6 bg-muted/30">
+              <h2 className="font-semibold mb-4">Información del juego</h2>
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>• La palabra del día se genera usando la fecha actual como semilla</p>
                 <p>• Cada día la palabra cambia automáticamente a medianoche</p>
                 <p>• El algoritmo asegura que la misma palabra aparezca para todos los jugadores</p>
-                <p>• La selección es aleatoria pero determinística basada en la fecha</p>
+                <p>• Diccionario de validación: ~90,000 palabras españolas</p>
               </div>
             </Card>
           </div>
